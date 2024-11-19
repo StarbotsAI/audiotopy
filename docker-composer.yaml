@@ -1,0 +1,40 @@
+version: "3.7"
+
+services:
+  transcript:
+    image: starbostaai/n8ntopy:latest
+    build: .
+    networks:
+      - starnet
+    ports:
+      - 8005:8005
+    environment:
+      Uvicorn_port: 8005
+      Uvicorn_host: 0.0.0.0
+      Uvicorn_reload: "true"
+      Uvicorn_workers: 1
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      labels:
+        - traefik.enable=true
+        - traefik.http.routers.transcript.rule=Host(`py.starbots.com.br`)
+        - traefik.http.routers.transcript.entrypoints=websecure
+        - traefik.http.routers.transcript.tls.certresolver=letsencryptresolver
+        - traefik.http.services.transcript.loadbalancer.server.port=8005
+        - traefik.http.services.transcript.loadbalancer.passHostHeader=true
+        - traefik.http.routers.transcript.service=transcript
+        - traefik.http.middlewares.traefik-compress.compress=true
+        - traefik.http.routers.transcript.middlewares=traefik-compress
+      resources:
+        limits:
+          cpus: "1"
+          memory: 1024M
+
+networks:
+  starnet:
+    external: true
+    name: starnet
